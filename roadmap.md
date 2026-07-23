@@ -12,7 +12,7 @@
 | 1     | Project Setup               | ✅ Done |
 | 2     | Basic Chat with Ollama      | ✅ Done |
 | 3     | Streaming Responses         | ✅ Done |
-| 4     | Document Upload             | ⬜ Todo |
+| 4     | Document Upload             | ✅ Done |
 | 5     | PDF Parsing                 | ⬜ Todo |
 | 6     | Chunking Strategy           | ⬜ Todo |
 | 7     | Embeddings                  | ⬜ Todo |

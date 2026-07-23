@@ -22,7 +22,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - uploads-data:/app/uploads
+      - ./uploads:/app/uploads
       - ./backend/src:/app/src   # hot-reload: changes reflect without rebuild
     networks:
       - legal-net
