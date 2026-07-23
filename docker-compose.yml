@@ -1,0 +1,77 @@
+
+# All services share this network so they can reach each other by name.
+# backend → http://ollama:11434   ✅
+# backend → http://qdrant:6333    ✅
+networks:
+  legal-net:
+    driver: bridge
+
+volumes:
+  ollama-data:    # Persists downloaded model weights across restarts
+  qdrant-data:    # Persists indexed vectors across restarts
+  uploads-data:   # Persists uploaded documents across restarts
+
+services:
+  # ─── Backend (NestJS) ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: legal-backend
+    env_file: .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads-data:/app/uploads
+      - ./backend/src:/app/src   # hot-reload: changes reflect without rebuild
+    networks:
+      - legal-net
+    depends_on:
+      - ollama
+      - qdrant
+    restart: unless-stopped
+
+  # ─── Frontend (React + Vite) ───────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: legal-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src  # hot-reload
+    networks:
+      - legal-net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ─── Ollama (Local LLM Runtime) ────────────────────────────────────────────
+  # Think of this as a local "model API gateway".
+  # It downloads and serves open-source models (llama3.2, nomic-embed-text).
+  ollama:
+    image: ollama/ollama:latest
+    container_name: legal-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama  # model weights live here (can be several GB)
+    networks:
+      - legal-net
+    restart: unless-stopped
+
+  # ─── Qdrant (Vector Database) ──────────────────────────────────────────────
+  # Stores embeddings (vectors) and lets us search by semantic similarity.
+  # Dashboard available at http://localhost:6333/dashboard
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: legal-qdrant
+    ports:
+      - "6333:6333"   # REST API + Dashboard
+      - "6334:6334"   # gRPC (not used now, but good to expose)
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - legal-net
+    restart: unless-stopped
